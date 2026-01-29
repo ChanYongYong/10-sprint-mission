@@ -1,21 +1,15 @@
 package com.sprint.mission.discodeit;
 
+import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.ChannelType;
 import com.sprint.mission.discodeit.entity.Message;
-import com.sprint.mission.discodeit.entity.User;
-import com.sprint.mission.discodeit.repository.ChannelRepository;
-import com.sprint.mission.discodeit.repository.MessageRepository;
-import com.sprint.mission.discodeit.repository.UserRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFChannelRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFMessageRepository;
-import com.sprint.mission.discodeit.repository.jcf.JCFUserRepository;
 import com.sprint.mission.discodeit.service.ChannelService;
 import com.sprint.mission.discodeit.service.MessageService;
 import com.sprint.mission.discodeit.service.UserService;
-import com.sprint.mission.discodeit.service.basic.BasicChannelService;
-import com.sprint.mission.discodeit.service.basic.BasicMessageService;
-import com.sprint.mission.discodeit.service.basic.BasicUserService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -26,24 +20,40 @@ import java.util.UUID;
 public class DiscodeitApplication {
 
     public static void main(String[] args) {
-
         ConfigurableApplicationContext context = SpringApplication.run(DiscodeitApplication.class, args);
 
-        UserService userService = context.getBean("basicUserService",UserService.class);
-        ChannelService channelService = context.getBean("basicChannelService",ChannelService.class);
-        MessageService messageService = context.getBean("basicMessageService",MessageService.class);
+        UserService userService = context.getBean(UserService.class);
+        ChannelService channelService = context.getBean(ChannelService.class);
+        MessageService messageService = context.getBean(MessageService.class);
 
         // ==================== 1. 등록 테스트 ====================
         System.out.println("\n[ 1. 등록 테스트 ]");
         System.out.println("----------------------------------------");
 
-        // 유저 등록
-        User a = userService.create("a", "a@test.com", "pw", "유저A");
-        User b = userService.create("b", "b@test.com", "pw", "유저B");
-        UUID aId = a.getId();
-        UUID bId = b.getId();
+        // 유저 등록 (DTO 사용)
+        UserCreateRequest userARequest = new UserCreateRequest("a", "a@test.com", "pw", "유저A");
+        UserCreateRequest userBRequest = new UserCreateRequest("b", "b@test.com", "pw", "유저B");
+
+        UserResponse userA = userService.create(userARequest, null);  // 프로필 이미지 없이
+        UserResponse userB = userService.create(userBRequest, null);
+
+        UUID aId = userA.id();
+        UUID bId = userB.id();
+
         System.out.println(">> 유저 등록 완료: " + userService.findAll().stream()
-                .map(User::getUsername).toList());
+                .map(UserResponse::username).toList());
+        System.out.println(">> 유저A 온라인 상태: " + userA.online());
+
+        // 프로필 이미지와 함께 유저 등록 테스트
+        UserCreateRequest userCRequest = new UserCreateRequest("c", "c@test.com", "pw", "유저C");
+        BinaryContentCreateRequest profileRequest = new BinaryContentCreateRequest(
+                "profile.png",
+                "image/png",
+                new byte[]{1, 2, 3}  // 테스트용 더미 데이터
+        );
+        UserResponse userC = userService.create(userCRequest, profileRequest);
+        System.out.println(">> 프로필 이미지 있는 유저 등록: " + userC.username());
+        System.out.println(">> 프로필 이미지 ID: " + userC.profileImageId());
 
         // 채널 등록
         Channel channel = channelService.create("테스트채널", "설명", ChannelType.PUBLIC, aId);
@@ -59,133 +69,86 @@ public class DiscodeitApplication {
         System.out.println(">> 메시지 등록 완료: " + messageService.findAll().stream()
                 .map(Message::getContent).toList());
 
-        // ==================== 2. 조회 테스트 (단건, 다건) ====================
-        System.out.println("\n[ 2. 조회 테스트 (단건, 다건) ]");
+        // ==================== 2. 조회 테스트 ====================
+        System.out.println("\n[ 2. 조회 테스트 ]");
         System.out.println("----------------------------------------");
 
-        // 단건 조회
-        System.out.println(">> 유저 단건 조회: " + userService.findById(aId).getUsername());
-        System.out.println(">> 채널 단건 조회: " + channelService.findById(channelId).getName());
-        System.out.println(">> 메시지 단건 조회: " + messageService.findById(msg1Id).getContent());
+        // 단건 조회 (UserResponse 반환)
+        UserResponse foundUser = userService.findById(aId);
+        System.out.println(">> 유저 단건 조회: " + foundUser.username());
+        System.out.println(">> 유저 온라인 상태: " + foundUser.online());
+        System.out.println(">> 유저 이메일: " + foundUser.email());
 
         // 다건 조회
         System.out.println(">> 유저 다건 조회: " + userService.findAll().size() + "명");
-        System.out.println(">> 채널 다건 조회: " + channelService.findAll().size() + "개");
-        System.out.println(">> 메시지 다건 조회: " + messageService.findAll().size() + "개");
-        System.out.println(">> 채널별 메시지 조회: " + messageService.findByChannel(channelId).stream()
-                .map(Message::getContent).toList());
-        System.out.println(">> 유저별 메시지 조회: " + messageService.findBySender(aId).stream()
-                .map(Message::getContent).toList());
 
         // ==================== 3. 수정 테스트 ====================
         System.out.println("\n[ 3. 수정 테스트 ]");
         System.out.println("----------------------------------------");
 
-        // 유저 수정
-        System.out.println(">> 수정 전 유저 닉네임: " + userService.findById(aId).getNickname());
-        userService.update(aId, null, null, "수정된닉네임", null, null);
-        System.out.println(">> 수정 후 유저 닉네임: " + userService.findById(aId).getNickname());
+        // 유저 수정 (DTO 사용)
+        System.out.println(">> 수정 전 유저 닉네임: " + userService.findById(aId).nickname());
 
-        // 채널 수정
-        System.out.println(">> 수정 전 채널 설명: " + channelService.findById(channelId).getDescription());
-        channelService.update(channelId, null, "수정된 설명", null);
-        System.out.println(">> 수정 후 채널 설명: " + channelService.findById(channelId).getDescription());
+        UserUpdateRequest updateRequest = new UserUpdateRequest(
+                aId,
+                null,           // username 변경 안함
+                null,           // email 변경 안함
+                "수정된닉네임",   // nickname 변경
+                null            // password 변경 안함
+        );
+        UserResponse updatedUser = userService.update(updateRequest, null);
+        System.out.println(">> 수정 후 유저 닉네임: " + updatedUser.nickname());
 
-        // 메시지 수정
-        System.out.println(">> 수정 전 메시지: " + messageService.findById(msg1Id).getContent());
-        messageService.update(msg1Id, "수정된 메시지");
-        System.out.println(">> 수정 후 메시지: " + messageService.findById(msg1Id).getContent());
+        // 프로필 이미지 교체 테스트
+        BinaryContentCreateRequest newProfile = new BinaryContentCreateRequest(
+                "new_profile.jpg",
+                "image/jpeg",
+                new byte[]{4, 5, 6}
+        );
+        UserUpdateRequest profileUpdateRequest = new UserUpdateRequest(
+                userC.id(), null, null, null, null
+        );
+        UserResponse updatedUserC = userService.update(profileUpdateRequest, newProfile);
+        System.out.println(">> 프로필 교체 후 이미지 ID: " + updatedUserC.profileImageId());
 
-        // ==================== 4. 수정된 데이터 조회 ====================
-        System.out.println("\n[ 4. 수정된 데이터 조회 ]");
+        // ==================== 4. 삭제 테스트 ====================
+        System.out.println("\n[ 4. 삭제 테스트 ]");
         System.out.println("----------------------------------------");
-        System.out.println(">> 유저 닉네임: " + userService.findById(aId).getNickname());
-        System.out.println(">> 채널 설명: " + channelService.findById(channelId).getDescription());
-        System.out.println(">> 메시지 내용: " + messageService.findById(msg1Id).getContent());
-        System.out.println(">> 메시지 수정 여부: " + messageService.findById(msg1Id).isEditedAt());
 
-        // ==================== 5. 삭제 테스트 ====================
-        System.out.println("\n[ 5. 삭제 테스트 ]");
-        System.out.println("----------------------------------------");
-        System.out.println(">> 삭제 전 메시지 수: " + messageService.findAll().size());
-        messageService.hardDelete(msg2.getId());
-        System.out.println(">> 삭제 후 메시지 수: " + messageService.findAll().size());
+        System.out.println(">> 삭제 전 유저 수: " + userService.findAll().size());
+        userService.hardDelete(userC.id());  // 프로필 이미지 + UserStatus도 같이 삭제됨
+        System.out.println(">> 삭제 후 유저 수: " + userService.findAll().size());
 
-        // ==================== 6. 삭제 후 조회 확인 ====================
-        System.out.println("\n[ 6. 삭제 후 조회 확인 ]");
-        System.out.println("----------------------------------------");
-        System.out.println(">> 남은 메시지: " + messageService.findAll().stream()
-                .map(Message::getContent).toList());
+        // 삭제된 유저 조회 시도
         try {
-            messageService.findById(msg2.getId());
-            System.out.println(">> [실패] 삭제된 메시지가 조회됨");
+            userService.findById(userC.id());
+            System.out.println(">> [실패] 삭제된 유저가 조회됨");
         } catch (Exception e) {
-            System.out.println(">> [성공] 삭제된 메시지 조회 불가: " + e.getMessage());
+            System.out.println(">> [성공] 삭제된 유저 조회 불가: " + e.getMessage());
         }
 
-        // ==================== 7. 서비스 간 의존성 검증 ====================
-        System.out.println("\n[ 7. 서비스 간 의존성 검증 ]");
+        // ==================== 5. 중복 검증 테스트 ====================
+        System.out.println("\n[ 5. 중복 검증 테스트 ]");
         System.out.println("----------------------------------------");
 
-        // 존재하지 않는 유저로 메시지 생성 시도
+        // username 중복
         try {
-            messageService.create("테스트", UUID.randomUUID(), channelId);
-            System.out.println(">> [실패] 예외가 발생하지 않음");
+            UserCreateRequest dupUsername = new UserCreateRequest("a", "new@test.com", "pw", "새유저");
+            userService.create(dupUsername, null);
+            System.out.println(">> [실패] 중복 username 예외 발생 안함");
         } catch (Exception e) {
-            System.out.println(">> [성공] 존재하지 않는 유저: " + e.getMessage());
+            System.out.println(">> [성공] username 중복: " + e.getMessage());
         }
 
-        // 존재하지 않는 채널로 메시지 생성 시도
+        // email 중복
         try {
-            messageService.create("테스트", aId, UUID.randomUUID());
-            System.out.println(">> [실패] 예외가 발생하지 않음");
+            UserCreateRequest dupEmail = new UserCreateRequest("newuser", "a@test.com", "pw", "새유저");
+            userService.create(dupEmail, null);
+            System.out.println(">> [실패] 중복 email 예외 발생 안함");
         } catch (Exception e) {
-            System.out.println(">> [성공] 존재하지 않는 채널: " + e.getMessage());
+            System.out.println(">> [성공] email 중복: " + e.getMessage());
         }
 
-        // 빈 content로 메시지 생성 시도
-        try {
-            messageService.create("", aId, channelId);
-            System.out.println(">> [실패] 예외가 발생하지 않음");
-        } catch (Exception e) {
-            System.out.println(">> [성공] 빈 메시지: " + e.getMessage());
-        }
-
-// ==================== 10. 객체 탐색 테스트 ====================
-        System.out.println("\n[ 10. 객체 탐색 테스트 ]");
-        System.out.println("----------------------------------------");
-
-// 메시지 → 채널 → 멤버들
-        Message message = messageService.findById(msg1Id);
-        Channel msgChannel = message.getChannel();
-        System.out.println(">> 메시지 → 채널 이름: " + msgChannel.getName());
-        System.out.println(">> 메시지 → 채널 → 멤버들: " + msgChannel.getMembers().stream()
-                .map(User::getUsername).toList());
-
-// 메시지 → 작성자 → 작성자의 채널들
-        User sender = message.getSender();
-        System.out.println(">> 메시지 → 작성자: " + sender.getUsername());
-        System.out.println(">> 메시지 → 작성자 → 채널들: " + sender.getChannels().stream()
-                .map(Channel::getName).toList());
-
-// 채널 → 오너 → 오너의 메시지들
-        Channel ch = channelService.findById(channelId);
-        User owner = ch.getOwner();
-        System.out.println(">> 채널 → 오너: " + owner.getUsername());
-        System.out.println(">> 채널 → 오너 → 메시지들: " + owner.getMessages().stream()
-                .map(Message::getContent).toList());
-
-// 유저 → 채널 → 채널의 메시지들
-        User userA = userService.findById(aId);
-        System.out.println(">> 유저A → 채널들: " + userA.getChannels().stream()
-                .map(Channel::getName).toList());
-        userA.getChannels().forEach(c -> {
-            System.out.println(">> 유저A → 채널[" + c.getName() + "] → 메시지들: " +
-                    c.getMessages().stream().map(Message::getContent).toList());
-        });
-
-
+        System.out.println("\n========== 테스트 완료 ==========");
     }
-
-
 }

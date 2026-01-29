@@ -1,26 +1,30 @@
 package com.sprint.mission.discodeit.service;
 
+import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.response.UserResponse;
 import com.sprint.mission.discodeit.entity.Channel;
 import com.sprint.mission.discodeit.entity.Status;
 import com.sprint.mission.discodeit.entity.User;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface UserService {
-    User create(String username, String email, String password, String nickname);
+    UserResponse  create(UserCreateRequest request, BinaryContentCreateRequest profileRequest);
 
-    User findById(UUID userId);
-    List<User> findAll();
+    UserResponse findById(UUID userId);
+    List<UserResponse> findAll();
 
-    User update(UUID userId, String username, String email, String nickname, String password);
+    UserResponse update(UserUpdateRequest request, @Nullable BinaryContentCreateRequest profileRequest);
 //    User updateProfile(UUID id, String username, String email, String nickname);
 //
 //    void changePassword(UUID id, String newPassword);
 //
 //    void changeStatus(UUID id, Status status);
 
-    void softDelete(UUID userId);
 
     void hardDelete(UUID userId);
 

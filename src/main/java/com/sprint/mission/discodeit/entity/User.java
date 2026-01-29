@@ -16,6 +16,7 @@ public class User extends BaseEntity implements Serializable {
     private String password;
     private String nickname;
     private final List<UUID> messageIds;  // 👈 추가
+    private UUID profileImageId;
 //    private Status status;
 
     public User (String username, String email, String password, String nickname) {
@@ -60,5 +61,8 @@ public class User extends BaseEntity implements Serializable {
         this.messageIds.remove(messageId);
         this.updatedAt = Instant.now();
     }
-
+    public void updateProfileImage(UUID profileImageId) {
+        this.profileImageId = profileImageId;
+        this.updatedAt = Instant.now();
+    }
 }
