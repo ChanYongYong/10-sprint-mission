@@ -1,9 +1,6 @@
-package com.sprint.mission.discodeit.dto.request;
-
-import java.util.UUID;
+package com.sprint.mission.discodeit.dto.user;
 
 public record UserUpdateRequest(
-        UUID userId,
         String username,
         String email,
         String nickname,

@@ -1,9 +1,9 @@
 package com.sprint.mission.discodeit.service.basic;
 
-import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
-import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.UserResponse;
+import com.sprint.mission.discodeit.dto.common.BinaryContentCreateRequest;
+import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.entity.*;
 import com.sprint.mission.discodeit.exception.DuplicateException;
 import com.sprint.mission.discodeit.exception.NotFoundException;
@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -83,9 +82,9 @@ public class BasicUserService implements UserService {
     }
 
     @Override
-    public UserResponse update(UserUpdateRequest request, @Nullable BinaryContentCreateRequest profileRequest) {
-        User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new NotFoundException("id", "존재하는 유저", request.userId()));
+    public UserResponse update(UUID userId, UserUpdateRequest request, @Nullable BinaryContentCreateRequest profileRequest) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("id", "존재하는 유저", userId));
 
         Optional.ofNullable(request.username()).ifPresent(user::updateUsername);
         Optional.ofNullable(request.email()).ifPresent(user::updateEmail);
@@ -144,30 +143,4 @@ public class BasicUserService implements UserService {
                 .collect(Collectors.toList());
     }
 
-    /*@Override
-    public void hardDelete(UUID userId) {
-        User user = findById(userId);
-
-        // 채널에서 유저 삭제
-        user.getChannels().forEach(channel -> {
-            channel.getMembers().remove(user);
-            channelRepository.save(channel);  //  추가
-        });
-        // 메시지 완전 삭제
-        new ArrayList<>(user.getMessages()).forEach(message -> {
-            Channel channel = message.getChannel();
-            message.removeFromChannelAndUser();
-            messageRepository.deleteById(message.getId());
-            if (channel != null) {
-                channelRepository.save(channel);  //  추가
-            }
-        });
-
-        userRepository.deleteById(userId);
-    }*/
-/*
-    @Override
-    public List<Channel> findChannelByUser(UUID userId) {
-        return findById(userId).getChannels();
-    }*/
 }

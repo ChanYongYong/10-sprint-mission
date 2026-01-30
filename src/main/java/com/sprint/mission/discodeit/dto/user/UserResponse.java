@@ -1,10 +1,9 @@
-package com.sprint.mission.discodeit.dto.response;
+package com.sprint.mission.discodeit.dto.user;
 
-import com.sprint.mission.discodeit.entity.User;
 import java.util.UUID;
 
 public record UserResponse(
-        UUID id,
+        UUID userId,
         String username,
         String email,
         String nickname,

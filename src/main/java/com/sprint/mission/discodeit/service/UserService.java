@@ -1,12 +1,10 @@
 package com.sprint.mission.discodeit.service;
 
-import com.sprint.mission.discodeit.dto.request.BinaryContentCreateRequest;
-import com.sprint.mission.discodeit.dto.request.UserCreateRequest;
-import com.sprint.mission.discodeit.dto.request.UserUpdateRequest;
-import com.sprint.mission.discodeit.dto.response.UserResponse;
+import com.sprint.mission.discodeit.dto.common.BinaryContentCreateRequest;
+import com.sprint.mission.discodeit.dto.user.UserCreateRequest;
+import com.sprint.mission.discodeit.dto.user.UserUpdateRequest;
+import com.sprint.mission.discodeit.dto.user.UserResponse;
 import com.sprint.mission.discodeit.entity.Channel;
-import com.sprint.mission.discodeit.entity.Status;
-import com.sprint.mission.discodeit.entity.User;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
@@ -18,7 +16,7 @@ public interface UserService {
     UserResponse findById(UUID userId);
     List<UserResponse> findAll();
 
-    UserResponse update(UserUpdateRequest request, @Nullable BinaryContentCreateRequest profileRequest);
+    UserResponse update(UUID userId, UserUpdateRequest request, @Nullable BinaryContentCreateRequest profileRequest);
 //    User updateProfile(UUID id, String username, String email, String nickname);
 //
 //    void changePassword(UUID id, String newPassword);
